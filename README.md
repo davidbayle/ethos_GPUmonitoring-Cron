@@ -50,3 +50,6 @@ and
  
 
 And the check itself has to be placed in /root/check_rig-hash
+
+
+http://www.davidbayle.com/knowledge-base/ethos_cronjob-check-mining-rig-hash/
