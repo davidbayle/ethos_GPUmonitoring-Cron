@@ -1,0 +1,211 @@
+#!/usr/bin/python
+#*****************************************************************
+# Author: David Bayle
+# Contact: contact@davidbayle.com
+# This python scripts cheks your ethOS mining rig Hash using Cron
+#
+# Usage: If the script detects hashrate lower than your threshold, or crashed GPU(s)
+# it will start counting up to 5 nrpe checks [5min by defaults (5 times your cronjob period)] and then force reboot.
+#
+#
+# Settings:
+# Do not forget to adjust your panel URL [gpuJsonSite] and the minimum hashrate value by gpu [gpuMinHashRate] to your needs :
+# # gpuJsonSite = "http://XXXXX.ethosdistro.com/?json=yes"
+# # gpuMinHashRate = 23.0
+#
+#
+# Requirements:
+#
+# R1) Create a gpu_crashReboot.log file with 0 as value inside :
+# (as ethos user:)
+# # sudo echo 0 > /var/log/gpu_crashReboot.log
+#
+# R2) edit Crontab file using :
+# (as ethos user:)
+# # sudo crontab -e
+#
+# and add the following at the end:
+# # Cron Check Rig Hash
+# * * * * * /usr/bin/python /root/check_rig-hash > /dev/null 2>&1
+#
+# Once done, save and quit.
+# Script will now be allowed to restart your rig if something goes wrong as explained in Usage section.
+# Enjoy ;)
+#
+#
+
+
+import os
+import sys
+import time
+import datetime
+import json
+import commands
+
+from urllib import urlopen
+
+
+STATE_OK = 0
+STATE_WARNING = 1
+STATE_CRITICAL = 2
+STATE_UNKNOWN = 3
+
+RETURN_STATE = STATE_OK
+
+gpuRigName = os.uname()[1]
+gpuJsonSite = "http://XXXXX.ethosdistro.com/?json=yes"
+gpuTemp = 0
+gpuMinHashRate = 23.0
+gpuRebootLogFile = "/var/log/gpu_crashReboot.log"
+
+# ================================   functions  =============================
+def PrintOutput(dumpStr):
+  print dumpStr
+
+def return_state(state):
+  global RETURN_STATE
+  RETURN_STATE = state
+
+def WriteRebootCount(count):
+  #print count
+
+  try:
+    # writes reboot counter in a file
+    pLogFile = open(gpuRebootLogFile, "w")
+    pLogFile.write("%i" % int(count))
+    pLogFile.close()
+  except:
+    print "File write error in - " + gpuRebootLogFile
+
+def ReadRebootCount():
+
+  try:
+    # read reboot counter from a file
+    pLogFile = open(gpuRebootLogFile, "r")
+    returnedValue = pLogFile.read(1)
+#    print returnedValue
+    return returnedValue
+  except:
+    print "File read error in - " + gpuRebootLogFile
+
+
+# ============================== process arguments ============================
+def ProcessArguments(gotPanelInfo):
+  global gpuRigName, gpuJsonSite
+
+  if (gotPanelInfo != 1):
+    PrintOutput("Taking rig name and panel url from arguments")
+
+  argStr = ""
+
+  argIdx = 0
+  argProcessed = 0
+  while (1):
+    argIdx += 1
+    if (argIdx >= len(sys.argv)):
+      break
+
+    arg = sys.argv[argIdx]
+
+    if (gotPanelInfo == 1):
+      PrintOutput("Ignoring argument : " + str(arg))
+      continue
+
+    argProcessed += 1
+    if (argProcessed == 1):
+      gpuRigName = arg
+    elif(argProcessed == 2):
+      gpuJsonSite = arg
+
+
+def GetPanelInfo():
+  global gpuRigName, gpuJsonSite
+
+  commandOutput = commands.getstatusoutput('\grep http /var/run/ethos/url.file')
+  if (commandOutput[0] != 0):
+    PrintOutput("UNKNOWN - /var/run/ethos/url.file is not availble")
+    return_state(STATE_UNKNOWN)
+
+  gpuJsonSite = commandOutput[1]
+  gpuJsonSite = gpuJsonSite+"/?json=yes"
+
+  commandOutput = commands.getstatusoutput("\grep hostname /var/run/ethos/stats.file")
+  if (commandOutput[0] != 0):
+    PrintOutput("UNKNOWN - /var/run/ethos/stats.file is not avaible")
+    return_state(STATE_UNKNOWN)
+
+  gpuRigName = commandOutput[1][9:]
+
+  return 1
+
+
+
+# ===================================   run  ================================
+success = GetPanelInfo()
+ProcessArguments(success)
+
+try:
+#  # force stats update
+    os.system("update > /dev/null 2>&1")
+  # try url open
+    url = urlopen(gpuJsonSite).read()
+  # gpu reboot count init
+    gpuRebootCount = int(ReadRebootCount())
+except:
+    PrintOutput("UNKNOWN - Invalid URL")
+    return_state(STATE_UNKNOWN)
+
+  # convert site content to json
+try:
+    result = json.loads(url)
+except:
+    PrintOutput("UNKNOWN - Invalid Json")
+    return_state(STATE_UNKNOWN)
+
+  # extract data
+try:
+    numGpus = result["rigs"][gpuRigName]["gpus"]
+    numRunningGpus = result["rigs"][gpuRigName]["miner_instance"]
+    hashRate =  result["rigs"][gpuRigName]["miner_hashes"]
+    tempList = hashRate.split()
+    status = result["rigs"][gpuRigName]["condition"]
+except:
+    PrintOutput("UNKNOWN - Invalid RIG Name")
+    return_state(STATE_UNKNOWN)
+
+
+if (status == "unreachable"):
+    PrintOutput("WARNING: Panel is not updating !")
+    return_state(STATE_WARNING)
+
+  # check if any gpu is down
+if (int(numRunningGpus) != int(numGpus)):
+  # increase reboot Counter if one or more Gpu(s) have crashed
+  PrintOutput("CRITICAL: One or more Gpu(s) might have crashed: GPU count: " + str(numRunningGpus) + "/" + str(numGpus) + " !!! (Hashrate: " + str(hashRate) + ")")
+  gpuRebootCount = gpuRebootCount + 1
+  WriteRebootCount(int(gpuRebootCount))
+  if (gpuRebootCount >= 5):
+    PrintOutput("CRITICAL: REBOOTING: One or more Gpu(s) have crashed or too low rate : GPU count: " + str(numRunningGpus) + "/" + str(numGpus) + " !!! (Hashrate: " + str(hashRate) + ")")
+    WriteRebootCount(0)
+    os.system("/opt/ethos/bin/r")
+  return_state(STATE_CRITICAL)
+  sys.exit(STATE_CRITICAL)
+
+else:
+    # reset reboot pending counter
+  for gpuHashes in tempList:
+    if (float(gpuHashes) <= gpuMinHashRate):
+       PrintOutput("WARNING: " + status.upper() + " GPUs: " + str(numRunningGpus) + "/" + str(numGpus) + " - HASHRATE LOWER THAN THRESHOLD ON ONE OR MORE GPU: " + str(gpuHashes) + " (MH/s)")
+       gpuRebootCount = gpuRebootCount + 1
+       WriteRebootCount(int(gpuRebootCount))
+       if (gpuRebootCount >= 5):
+         PrintOutput("CRITICAL: REBOOTING: One or more Gpu(s) have crashed or too low rate : GPU count: " + str(numRunningGpus) + "/" + str(numGpus) + " !!! (Hashrate: " + str(hashRate) + ")")
+         WriteRebootCount(0)
+         os.system("/opt/ethos/bin/r")
+       return_state(STATE_WARNING)
+       sys.exit(STATE_WARNING)
+
+WriteRebootCount(0)
+PrintOutput(status.upper() + " OK :: GPUs: " + str(numRunningGpus) + "/" + str(numGpus) + " - HASHRATES ARE OK: " + str(hashRate) + " (MH/s)")
+return_state(STATE_OK)
+sys.exit(STATE_OK)
