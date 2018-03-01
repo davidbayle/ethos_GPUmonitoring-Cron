@@ -2,7 +2,7 @@
 
 Prerequisites: Mining RIG using ethOS
 
-This procedure will help you setting up a cronjob to monitor the Hash rate data from your ethOS RIG; if the hasrate goes below your defined cronjob, after 6 tries, the cronjob will restart your RIG.
+This procedure will help you setting up a cronjob to monitor the Hash rate data from your ethOS RIG; if the hasrate goes below your defined cronjob, after 5 tries, the cronjob will restart your RIG.
 
 
 REQUIREMENTS:
