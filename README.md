@@ -47,7 +47,7 @@ You can test the script using:
 
 ```bash
 # python /root/check_righ-hash
-OK - Global Rig hashrate : 90.7 (MH/s) [Threshold: 80.0]
+OK - Global Rig hashrate : 122.7 (MH/s) [Threshold: 110.0]
 ```
 
 Source: http://www.davidbayle.com/knowledge-base/ethos_cronjob-check-mining-rig-hash/
