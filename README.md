@@ -51,3 +51,6 @@ OK - Global Rig hashrate : 122.7 (MH/s) [Threshold: 110.0]
 ```
 
 Source: http://www.davidbayle.com/knowledge-base/ethos_cronjob-check-mining-rig-hash/
+
+
+Tested against ethOS 1.2.3 to 1.3.0
