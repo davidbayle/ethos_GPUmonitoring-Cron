@@ -53,6 +53,20 @@ def ReadStatusFile():
     print "File read error in - " + rigStatusLogFile
 
 
+def ReadRigName():
+  try:
+    # read rig name from ethos stats file
+    pStatsLogFile = open(rigStatsLogFile, "r")
+    for line in open(rigStatsLogFile, "r"):
+      if "rack_loc" in line:
+        returnedString = line.split(":", 1)
+        returnedName = returnedString[1]
+        rName = returnedName.replace("\n", "")
+        return rName
+  except:
+    print "File read error in - " + rigStatsLogFile    
+
+
 def WriteRebootCount(count):
   #print count
   try:
