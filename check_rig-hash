@@ -97,7 +97,6 @@ try:
     gpuRebootCount = int(ReadRebootCount())
 except:
     PrintOutput("UNKNOWN - Invalid Status File / Reboot counter read")
-    return_state(STATE_UNKNOWN)
 
 # extract data
 try:
@@ -106,7 +105,6 @@ try:
     hashRate = hashRateData[0]
 except:
     PrintOutput("UNKNOWN - Invalid RIG Hashrate reading")
-    return_state(STATE_UNKNOWN)
 
 
 if (IsNumber(hashRateData[0])):
@@ -115,23 +113,18 @@ if (IsNumber(hashRateData[0])):
     PrintOutput("WARNING: RIG HASHRATE LOWER THAN THRESHOLD (" + str(rigMinHashRate) + ") : " + hashRate + " (MH/s)")
     gpuRebootCount = gpuRebootCount + 1
     WriteRebootCount(int(gpuRebootCount))
-    return_state(STATE_WARNING)
     sys.exit(STATE_WARNING)
     if (gpuRebootCount >= 5):
       PrintOutput("CRITICAL: REBOOTING: MINER CRASHED FOR 5 MINs : RIG HASHRATE LOWER THAN THRESHOLD (" + str(rigMinHashRate) + ") : " + hashRate + " (MH/s)")
       WriteRebootCount(0)
       os.system("/opt/ethos/bin/r")
-      return_state(STATE_CRITICAL)
-      sys.exit(STATE_CRITICAL)
 
   else:
     WriteRebootCount(0)
     PrintOutput("OK - [" + str(rigName) + "] Global Rig hashrate : " + hashRate + " (MH/s) [Threshold: " +str(rigMinHashRate) + "]")
-    return_state(STATE_OK)
-    sys.exit(STATE_OK)
 
 else:
-  if (hashRateData[0] == "gpu" and hashRateData[1] == "clock"):
+  if (hashRateData[0].strip() == "gpu" and hashRateData[1].strip() == "clock problem"):
     PrintOutput("WARNING: A GPU CRASHED !!!")
     gpuRebootCount = gpuRebootCount + 1
     WriteRebootCount(int(gpuRebootCount))
@@ -139,18 +132,22 @@ else:
       PrintOutput("CRITICAL: REBOOTING: MINER GPU CRASHED FOR 5 MINs !!!")
       WriteRebootCount(0)
       os.system("/opt/ethos/bin/r")
-      return_state(STATE_CRITICAL)
-      sys.exit(STATE_CRITICAL)
 
-  if (hashRateData[0] == "miner" and hashRateData[1] == "started"):
+  if (hashRateData[0].strip() == "possible" and hashRateData[1].strip() == "miner stall: check miner log"):
+    PrintOutput("WARNING: POSSIBLE MINER CRASH !!!")
+    gpuRebootCount = gpuRebootCount + 1
+    WriteRebootCount(int(gpuRebootCount))
+    if (gpuRebootCount >= 5):
+      PrintOutput("CRITICAL: REBOOTING: MINER GPU CRASHED FOR 5 MINs !!!")
+      WriteRebootCount(0)
+      os.system("/opt/ethos/bin/r")
+
+  if (hashRateData[0].strip() == "miner" and hashRateData[1].strip() == "started"):
     PrintOutput("WARNING: Miner Starting")
     gpuRebootCount = gpuRebootCount + 1
     WriteRebootCount(int(gpuRebootCount))
-    return_state(STATE_WARNING)
-    sys.exit(STATE_WARNING)
     if (gpuRebootCount >= 5):
       PrintOutput("CRITICAL: REBOOTING: MINER DIDN'T START IN 5 MINs !!!")
       WriteRebootCount(0)
       os.system("/opt/ethos/bin/r")
-      return_state(STATE_CRITICAL)
-      sys.exit(STATE_CRITICAL)
+
