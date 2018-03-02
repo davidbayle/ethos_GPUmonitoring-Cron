@@ -155,7 +155,7 @@ else:
       WriteRebootCount(0)
       os.system("/opt/ethos/bin/r")
 
-  if (hashRateData[0].strip() == "miner" and hashRateData[1].strip() == "started"):
+  if (hashRateData[0].strip() == "miner" and "started" in hashRateData[1].strip()):
     PrintOutput("WARNING: Miner Starting")
     gpuRebootCount = gpuRebootCount + 1
     WriteRebootCount(int(gpuRebootCount))
