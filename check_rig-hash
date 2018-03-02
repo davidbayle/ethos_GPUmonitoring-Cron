@@ -127,7 +127,6 @@ if (IsNumber(hashRateData[0])):
     PrintOutput("WARNING: RIG HASHRATE LOWER THAN THRESHOLD (" + str(rigMinHashRate) + ") : " + hashRate + " (MH/s)")
     gpuRebootCount = gpuRebootCount + 1
     WriteRebootCount(int(gpuRebootCount))
-    sys.exit(STATE_WARNING)
     if (gpuRebootCount >= 5):
       PrintOutput("CRITICAL: REBOOTING: MINER CRASHED FOR 5 MINs : RIG HASHRATE LOWER THAN THRESHOLD (" + str(rigMinHashRate) + ") : " + hashRate + " (MH/s)")
       WriteRebootCount(0)
