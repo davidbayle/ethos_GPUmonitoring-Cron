@@ -137,7 +137,7 @@ if (IsNumber(hashRateData[0])):
     PrintOutput("OK - [" + str(rigName) + "] Global Rig hashrate : " + hashRate + " (MH/s) [Threshold: " +str(rigMinHashRate) + "]")
 
 else:
-  if (hashRateData[0].strip() == "gpu" and hashRateData[1].strip() == "clock problem"):
+  if (hashRateData[0].strip() == "gpu" and "clock problem" in hashRateData[1].strip()):
     PrintOutput("WARNING: A GPU CRASHED !!!")
     gpuRebootCount = gpuRebootCount + 1
     WriteRebootCount(int(gpuRebootCount))
@@ -146,7 +146,7 @@ else:
       WriteRebootCount(0)
       os.system("/opt/ethos/bin/r")
 
-  if (hashRateData[0].strip() == "possible" and hashRateData[1].strip() == "miner stall: check miner log"):
+  if (hashRateData[0].strip() == "possible" and "miner stall" in hashRateData[1].strip()):
     PrintOutput("WARNING: POSSIBLE MINER CRASH !!!")
     gpuRebootCount = gpuRebootCount + 1
     WriteRebootCount(int(gpuRebootCount))
