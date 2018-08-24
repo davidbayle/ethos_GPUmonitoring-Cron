@@ -130,7 +130,7 @@ if (IsNumber(hashRateData[0])):
     if (gpuRebootCount >= 5):
       PrintOutput("CRITICAL: REBOOTING: MINER CRASHED FOR 5 MINs : RIG HASHRATE LOWER THAN THRESHOLD (" + str(rigMinHashRate) + ") : " + hashRate + " (MH/s)")
       WriteRebootCount(0)
-      os.system("/opt/ethos/bin/r")
+      os.system("/sbin/reboot")
 
   else:
     WriteRebootCount(0)
@@ -144,7 +144,7 @@ else:
     if (gpuRebootCount >= 5):
       PrintOutput("CRITICAL: REBOOTING: MINER GPU CRASHED FOR 5 MINs !!!")
       WriteRebootCount(0)
-      os.system("/opt/ethos/bin/r")
+      os.system("/sbin/reboot")
 
   if (hashRateData[0].strip() == "possible" and "miner stall" in hashRateData[1].strip()):
     PrintOutput("WARNING: POSSIBLE MINER CRASH !!!")
@@ -153,7 +153,7 @@ else:
     if (gpuRebootCount >= 5):
       PrintOutput("CRITICAL: REBOOTING: MINER GPU CRASHED FOR 5 MINs !!!")
       WriteRebootCount(0)
-      os.system("/opt/ethos/bin/r")
+      os.system("/sbin/reboot")
 
   if (hashRateData[0].strip() == "miner" and "started" in hashRateData[1].strip()):
     PrintOutput("WARNING: Miner Starting")
@@ -162,5 +162,5 @@ else:
     if (gpuRebootCount >= 5):
       PrintOutput("CRITICAL: REBOOTING: MINER DIDN'T START IN 5 MINs !!!")
       WriteRebootCount(0)
-      os.system("/opt/ethos/bin/r")
+      os.system("/sbin/reboot")
 
